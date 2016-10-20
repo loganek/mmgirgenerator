@@ -3,6 +3,7 @@ add_executable(mmgirgenerator
   defsprinter.cc
   repositoryloader.cc
   datastructures.h
-  dependencyresolver.cc)
+  dependencyresolver.cc
+  mainoptiongroup.cc)
 
 target_link_libraries(mmgirgenerator ${LIBXMLPP3_LIBRARIES} dl)

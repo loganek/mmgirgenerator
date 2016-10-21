@@ -9,18 +9,17 @@ namespace GirGen {
 class DependencyResolver
 {
     std::string gir_path;
-    std::string initial_repository;
     std::vector<std::string> packages;
 
     static std::vector<std::string> get_include_list(const std::string &gir_file);
-    void resolve_package_dependency(const std::string &package);
-    bool is_in_vector(const std::string &repository_name) const;
+    bool is_in_vector(const std::string &package_name) const;
 
 public:
-    DependencyResolver(const std::string &gir_path, const std::string &initial_repository);
+    DependencyResolver(const std::string &gir_path);
     virtual ~DependencyResolver() {}
 
-    std::vector<std::string> resolve_dependencies();
+    void resolve_dependencies(const std::string &package);
+    std::vector<std::string>  get_packages() const { return packages; }
 };
 
 }

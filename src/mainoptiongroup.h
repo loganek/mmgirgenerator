@@ -20,8 +20,11 @@ public:
     bool on_post_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
 
     std::string gir_path;
-    Glib::OptionGroup::vecstrings packages;
+    bool print_vfunc = false;
+    bool print_enum = false;
+    Glib::ustring req_namespace;
     std::map<std::string, std::string> namespace_mapping;
+    Glib::OptionGroup::vecstrings packages;
 };
 
 }

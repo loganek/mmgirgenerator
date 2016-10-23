@@ -16,15 +16,30 @@ MainOptionGroup::MainOptionGroup()
     gir_path = default_gir_path;
     add_entry_filename(gir_path_entry, gir_path);
 
+    Glib::OptionEntry namespace_entry;
+    namespace_entry.set_long_name("namespace");
+    namespace_entry.set_description("Processed namespace");
+    namespace_entry.set_arg_description("NAMESPACE");
+    add_entry(namespace_entry, req_namespace);
+
     Glib::OptionEntry mapping_entry;
     mapping_entry.set_long_name("namespace-mapping");
     mapping_entry.set_description("Namespace mapping, MAPPING format: from_namespace:to_namespace[,...]");
     mapping_entry.set_arg_description("MAPPING");
     add_entry(mapping_entry, sigc::mem_fun(*this, &MainOptionGroup::on_option_namespace_mapping));
 
+    Glib::OptionEntry vfunc_entry;
+    vfunc_entry.set_long_name("print-vfunc");
+    vfunc_entry.set_description("Print definitions of virtual methods");
+    add_entry(vfunc_entry, print_vfunc);
+
+    Glib::OptionEntry enum_entry;
+    enum_entry.set_long_name("print-enum");
+    enum_entry.set_description("Print definitions of enums and flags");
+    add_entry(enum_entry, print_enum);
+
     Glib::OptionEntry entry_remaining;
     entry_remaining.set_long_name(G_OPTION_REMAINING);
-
     add_entry_filename(entry_remaining, packages);
 }
 
@@ -86,6 +101,11 @@ bool MainOptionGroup::on_post_parse(Glib::OptionContext&, Glib::OptionGroup&)
         {
             throw Glib::OptionError(Glib::OptionError::BAD_VALUE, "Package " + package + " doesn't exist in the " + gir_path + " directory.");
         }
+    }
+
+    if (req_namespace.empty())
+    {
+        throw Glib::OptionError(Glib::OptionError::BAD_VALUE, "Namespace can't be empty. See help for the details.");
     }
 
     return true;

@@ -10,18 +10,18 @@ class MainOptionGroup : public Glib::OptionGroup
 private:
     const std::string default_gir_path = "/usr/share/gir-1.0";
 
-    bool parse_ok = true;
+    bool on_option_namespace_mapping(const Glib::ustring& option_name, const Glib::ustring& value, bool has_value);
+
+    static std::vector<std::string> split(const std::string &str, char delim);
 
 public:
     MainOptionGroup();
 
     bool on_post_parse(Glib::OptionContext& context, Glib::OptionGroup& group) override;
-    void on_error(Glib::OptionContext& context, OptionGroup& group) override;
-
-    bool is_parse_ok() const { return parse_ok; }
 
     std::string gir_path;
     Glib::OptionGroup::vecstrings packages;
+    std::map<std::string, std::string> namespace_mapping;
 };
 
 }

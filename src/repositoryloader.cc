@@ -2,11 +2,6 @@
 
 namespace GirGen {
 
-RepositoryLoader::RepositoryLoader(const std::map<std::string, std::string>& namespace_mapper)
-    : namespace_mapper(namespace_mapper)
-{
-}
-
 const xmlpp::Element* RepositoryLoader::to_element(const xmlpp::Node *node)
 {
     return dynamic_cast<const xmlpp::Element*>(node);
@@ -366,11 +361,6 @@ void RepositoryLoader::parse_gir_file(const std::string &gir_file)
         if (child->get_name() == "namespace")
         {
             std::string nspace_name = to_element(child)->get_attribute_value("name");
-
-            if (namespace_mapper.find(nspace_name) != namespace_mapper.end())
-            {
-                nspace_name = namespace_mapper[nspace_name];
-            }
 
             if (namespaces.find(nspace_name) == namespaces.end())
             {

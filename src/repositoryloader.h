@@ -10,9 +10,12 @@ namespace GirGen {
 
 class RepositoryLoader
 {
+public:
+    using NamespaceMap = std::map<std::string, std::shared_ptr<NamespaceInfo>>;
+
+private:
     xmlpp::DomParser parser;
-    std::map<std::string, std::string> namespace_mapper;
-    std::map<std::string, std::shared_ptr<NamespaceInfo>> namespaces;
+    NamespaceMap namespaces;
 
     void load_namespace(const xmlpp::Element *element, const std::shared_ptr<NamespaceInfo> &nspace);
 
@@ -37,10 +40,11 @@ class RepositoryLoader
     static const xmlpp::Element* to_element(const xmlpp::Node *node);
 
 public:
-    RepositoryLoader(const std::map<std::string, std::string>& namespace_mapper ={});
     virtual ~RepositoryLoader() {}
 
     void parse_gir_file(const std::string &gir_file);
+
+    NamespaceMap get_namespaces() const { return namespaces; }
 };
 
 }

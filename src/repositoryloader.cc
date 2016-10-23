@@ -2,7 +2,10 @@
 
 namespace GirGen {
 
-std::map<std::string, std::shared_ptr<NamespaceInfo>> RepositoryLoader::namespaces;
+RepositoryLoader::RepositoryLoader(const std::map<std::string, std::string>& namespace_mapper)
+    : namespace_mapper(namespace_mapper)
+{
+}
 
 const xmlpp::Element* RepositoryLoader::to_element(const xmlpp::Node *node)
 {
@@ -34,7 +37,6 @@ EmissionStage RepositoryLoader::emission_stage_from_string(const std::string &st
 
 void RepositoryLoader::load_namespace(const xmlpp::Element *element, const std::shared_ptr<NamespaceInfo> &nspace)
 {
-    nspace->name = element->get_attribute_value("name");
     nspace->c_prefix = element->get_attribute_value("identifier-prefixes", "c");
 
     for (const auto& child : element->get_children())
@@ -365,9 +367,15 @@ void RepositoryLoader::parse_gir_file(const std::string &gir_file)
         {
             std::string nspace_name = to_element(child)->get_attribute_value("name");
 
+            if (namespace_mapper.find(nspace_name) != namespace_mapper.end())
+            {
+                nspace_name = namespace_mapper[nspace_name];
+            }
+
             if (namespaces.find(nspace_name) == namespaces.end())
             {
                 namespaces[nspace_name] = std::make_shared<NamespaceInfo>();
+                namespaces[nspace_name]->name = nspace_name;
             }
 
             load_namespace(to_element(child), namespaces[nspace_name]);

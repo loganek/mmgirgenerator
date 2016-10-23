@@ -11,8 +11,8 @@ namespace GirGen {
 class RepositoryLoader
 {
     xmlpp::DomParser parser;
-public:
-    static std::map<std::string, std::shared_ptr<NamespaceInfo>> namespaces;
+    std::map<std::string, std::string> namespace_mapper;
+    std::map<std::string, std::shared_ptr<NamespaceInfo>> namespaces;
 
     void load_namespace(const xmlpp::Element *element, const std::shared_ptr<NamespaceInfo> &nspace);
 
@@ -37,6 +37,7 @@ public:
     static const xmlpp::Element* to_element(const xmlpp::Node *node);
 
 public:
+    RepositoryLoader(const std::map<std::string, std::string>& namespace_mapper ={});
     virtual ~RepositoryLoader() {}
 
     void parse_gir_file(const std::string &gir_file);
@@ -44,4 +45,4 @@ public:
 
 }
 
-#endif // _GIR_GEN_REPOSITORY_LOADER_H_
+#endif /* _GIR_GEN_REPOSITORY_LOADER_H_ */

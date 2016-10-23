@@ -16,7 +16,11 @@ void DefsPrinter::print_enums() const
         {
             std::cout << "(define-enum-extended " << enum_info->name << std::endl;
         }
-        std::cout << "  (in-module \"Gst\")" << std::endl;
+
+        std::string module = namespace_mapping.find(nspace->name) != namespace_mapping.end() ?
+                    namespace_mapping.at(nspace->name) : nspace->name;
+
+        std::cout << "  (in-module \"" << module << "\")" << std::endl;
         std::cout << "  (c-name \"" << enum_info->c_type << "\")" << std::endl;
         std::cout << "  (values" << std::endl;
 

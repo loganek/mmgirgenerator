@@ -38,6 +38,11 @@ MainOptionGroup::MainOptionGroup()
     enum_entry.set_description("Print definitions of enums and flags");
     add_entry(enum_entry, print_enum);
 
+    Glib::OptionEntry signal_entry;
+    signal_entry.set_long_name("print-signal");
+    signal_entry.set_description("Print definitions of signals");
+    add_entry(signal_entry, print_signal);
+
     Glib::OptionEntry entry_remaining;
     entry_remaining.set_long_name(G_OPTION_REMAINING);
     add_entry_filename(entry_remaining, packages);

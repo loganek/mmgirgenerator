@@ -22,6 +22,7 @@ public:
     std::string gir_path;
     bool print_vfunc = false;
     bool print_enum = false;
+    bool print_signal = false;
     Glib::ustring req_namespace;
     std::map<std::string, std::string> namespace_mapping;
     Glib::OptionGroup::vecstrings packages;

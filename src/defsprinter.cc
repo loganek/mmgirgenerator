@@ -1,6 +1,7 @@
 #include "defsprinter.h"
 
 #include <iostream>
+#include <algorithm>
 
 namespace GirGen {
 
@@ -39,51 +40,151 @@ void DefsPrinter::print_virtual_methods() const
 {
     for (std::shared_ptr<ClassInfo> class_info : nspace->classes)
     {
-        print_virtual_methods_of_structure(class_info, class_info->c_type);
+        print_functions(class_info->methods, class_info->c_type);
     }
 
     for (std::shared_ptr<InterfaceInfo> interface_info : nspace->interfaces)
     {
-        print_virtual_methods_of_structure(interface_info, interface_info->c_type);
+        print_functions(interface_info->methods, interface_info->c_type);
     }
 }
 
-void DefsPrinter::print_virtual_methods_of_structure(const std::shared_ptr<StructureInfo> &structure, const std::string &parent_c_type) const
+void DefsPrinter::print_signals() const
 {
-    for (std::shared_ptr<FunctionInfo> fnc : structure->methods)
+    for (std::shared_ptr<ClassInfo> class_info : nspace->classes)
+    {
+        print_signals(class_info->glib_signals, class_info->c_type);
+    }
+
+    for (std::shared_ptr<InterfaceInfo> interface_info : nspace->interfaces)
+    {
+        print_signals(interface_info->glib_signals, interface_info->c_type);
+    }
+}
+
+void DefsPrinter::print_functions(const std::vector<std::shared_ptr<FunctionInfo>> &functions, const std::string &parent_c_type) const
+{
+    for (std::shared_ptr<FunctionInfo> fnc : functions)
     {
         if (!fnc->is_virtual)
         {
             continue;
         }
 
-        std::cout << "(define-vfunc " << fnc->name << std::endl;
-        std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
-        std::cout << "  (return-type \"" << fnc->return_value->type->c_type << "\")" << std::endl;
-
-        // > 1, because we don't consider instance-parameter
-        if (fnc->parameters.size() > 1 || fnc->throws)
-        {
-            std::cout << "  (parameters" << std::endl;
-            for (std::shared_ptr<FunctionInfo::ParameterInfo> parameter : fnc->parameters)
-            {
-                if (parameter->is_instance_param)
-                {
-                    continue;
-                }
-
-                std::cout << "   '(\"" << parameter->type->c_type << "\" \"" << parameter->name << "\")" << std::endl;
-            }
-            if (fnc->throws)
-            {
-                std::cout << "   '(\"GError**\" \"error\")" << std::endl;
-            }
-
-            std::cout << "  )" << std::endl;
-        }
+        print_callable_header("vfunc", parent_c_type, fnc);
+        print_callable_parameters(fnc);
 
         std::cout << ")" << std::endl << std::endl;
     }
+}
+
+static std::string to_string(EmissionStage when)
+{
+    switch (when)
+    {
+    case EmissionStage::Cleanup:
+        return "cleanup";
+    case EmissionStage::First:
+        return "first";
+    case EmissionStage::Last:
+        return "last";
+    }
+
+    throw std::runtime_error("unexpected emission stage value");
+}
+
+void DefsPrinter::print_signals(const std::vector<std::shared_ptr<SignalInfo>> &signal_objects, const std::string &parent_c_type) const
+{
+    for (std::shared_ptr<SignalInfo> sgnl : signal_objects)
+    {
+        print_callable_header("signal", parent_c_type, sgnl);
+
+        std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
+
+        print_callable_parameters(sgnl);
+
+        std::cout << ")" << std::endl << std::endl;
+    }
+}
+
+static std::string get_c_type_name(const std::shared_ptr<NamespaceCollection>& nspace_collection, const std::string& type_name, const std::string& current_namespace)
+{
+    auto enum_info = nspace_collection->find_enum_by_name(type_name, current_namespace);
+    if (enum_info)
+    {
+        return enum_info->c_type;
+    }
+
+    auto structure_info = nspace_collection->find_structure_by_name(type_name, current_namespace);
+    if (structure_info)
+    {
+        return structure_info->c_type + "*";
+    }
+
+    auto alias_info = nspace_collection->find_alias_by_name(type_name, current_namespace);
+    if (alias_info)
+    {
+        return alias_info->c_type;
+    }
+
+    // TODO is array
+    if (type_name == "utf8")
+    {
+        return "gchar*";
+    }
+
+    throw std::runtime_error("unknown type " + type_name); // TODO warning instead of exception
+}
+
+void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable) const
+{
+    // TODO might instance_param appear as non-first parameter?
+    bool has_instance_param = callable->parameters.size() > 0 && callable->parameters[0]->is_instance_param;
+
+    if (callable->parameters.size() > has_instance_param || callable->throws)
+    {
+        std::cout << "  (parameters" << std::endl;
+        for (std::shared_ptr<FunctionInfo::ParameterInfo> parameter : callable->parameters)
+        {
+            if (parameter->is_instance_param)
+            {
+                continue;
+            }
+
+            std::string c_type;
+            auto type = parameter->type;
+            bool is_array = false;
+            if (auto arr_type = std::dynamic_pointer_cast<ArrayInfo>(type))
+            {
+                is_array = true;
+                if (!arr_type->c_type.empty()) c_type = arr_type->c_type;
+                else if (!arr_type->name.empty()) c_type = get_c_type_name(nspace_collection, arr_type->name, nspace->name);
+                else type = arr_type->underlying_type;
+            }
+
+            if (c_type.empty())
+            {
+                c_type = type->c_type.empty() ?
+                        get_c_type_name(nspace_collection, type->name, nspace->name) : parameter->type->c_type;
+                if (is_array) c_type += "*";
+            }
+
+            std::cout << "   '(\"" << c_type << "\" \"" << parameter->name << "\")" << std::endl;
+        }
+        if (callable->throws)
+        {
+            std::cout << "   '(\"GError**\" \"error\")" << std::endl;
+        }
+
+        std::cout << "  )" << std::endl;
+    }
+}
+
+void DefsPrinter::print_callable_header(const std::string &type, const std::string& parent_c_type, const std::shared_ptr<CallableInfo> &callable) const
+{
+    std::cout << "(define-" << type << " " << callable->name << std::endl;
+    std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
+    std::cout << "  (return-type \"" << callable->return_value->type->c_type << "\")" << std::endl;
 }
 
 }

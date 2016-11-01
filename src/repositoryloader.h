@@ -2,6 +2,7 @@
 #define _GIR_GEN_REPOSITORY_LOADER_H_
 
 #include "datastructures.h"
+#include "namespacecollection.h"
 #include <libxml++/libxml++.h>
 
 #include <string>
@@ -10,12 +11,8 @@ namespace GirGen {
 
 class RepositoryLoader
 {
-public:
-    using NamespaceMap = std::map<std::string, std::shared_ptr<NamespaceInfo>>;
-
 private:
     xmlpp::DomParser parser;
-    NamespaceMap namespaces;
 
     void load_namespace(const xmlpp::Element *element, const std::shared_ptr<NamespaceInfo> &nspace);
 
@@ -42,9 +39,7 @@ private:
 public:
     virtual ~RepositoryLoader() {}
 
-    void parse_gir_file(const std::string &gir_file);
-
-    NamespaceMap get_namespaces() const { return namespaces; }
+    void parse_gir_file(const std::string &gir_file, const std::shared_ptr<NamespaceCollection>& nspace_collection);
 };
 
 }

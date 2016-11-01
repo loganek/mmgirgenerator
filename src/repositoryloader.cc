@@ -1,5 +1,7 @@
 #include "repositoryloader.h"
 
+#include <algorithm>
+
 namespace GirGen {
 
 const xmlpp::Element* RepositoryLoader::to_element(const xmlpp::Node *node)
@@ -68,6 +70,7 @@ std::shared_ptr<AliasInfo> RepositoryLoader::load_alias(const xmlpp::Element *el
     auto alias = std::make_shared<AliasInfo>();
 
     alias->name = element->get_attribute_value("name");
+    alias->c_type = element->get_attribute_value("type", "c");
 
     alias->type = read_type(element);
 
@@ -247,7 +250,7 @@ void RepositoryLoader::load_structure(const xmlpp::Element *element, const std::
         {
             structure->functions.push_back(load_function(to_element(child)));
         }
-        else if (child->get_name() == "glib:signal")
+        else if (child->get_name() == "signal")
         {
             structure->glib_signals.push_back(load_signal(to_element(child)));
         }
@@ -308,7 +311,9 @@ std::shared_ptr<TypeInfo> RepositoryLoader::read_type(const xmlpp::Node *parent_
 
             auto arr_type = std::make_shared<ArrayInfo>();
 
-            arr_type->name = read_type(child)->c_type;
+            arr_type->name = element->get_attribute_value("name");
+            arr_type->c_type = element->get_attribute_value("type", "c");
+            arr_type->underlying_type = read_type(child);
 
             if (element->get_attribute("length"))
             {
@@ -350,7 +355,7 @@ std::shared_ptr<TypeInfo> RepositoryLoader::read_type(const xmlpp::Node *parent_
     throw std::runtime_error("expected type node");
 }
 
-void RepositoryLoader::parse_gir_file(const std::string &gir_file)
+void RepositoryLoader::parse_gir_file(const std::string &gir_file, const std::shared_ptr<NamespaceCollection>& nspace_collection)
 {
     parser.parse_file(gir_file);
 
@@ -362,13 +367,13 @@ void RepositoryLoader::parse_gir_file(const std::string &gir_file)
         {
             std::string nspace_name = to_element(child)->get_attribute_value("name");
 
-            if (namespaces.find(nspace_name) == namespaces.end())
+            if (nspace_collection->find(nspace_name) == nspace_collection->end())
             {
-                namespaces[nspace_name] = std::make_shared<NamespaceInfo>();
-                namespaces[nspace_name]->name = nspace_name;
+                (*nspace_collection)[nspace_name] = std::make_shared<NamespaceInfo>();
+                (*nspace_collection)[nspace_name]->name = nspace_name;
             }
 
-            load_namespace(to_element(child), namespaces[nspace_name]);
+            load_namespace(to_element(child), (*nspace_collection)[nspace_name]);
         }
     }
 }

@@ -35,6 +35,7 @@ struct TypeInfo : public BaseInfo
 {
     std::string c_type;
     bool is_constant = false;
+    virtual ~TypeInfo() {}
 };
 
 struct ArrayInfo : public TypeInfo
@@ -42,6 +43,7 @@ struct ArrayInfo : public TypeInfo
     int length = -1;
     int fixed_size = -1;
     bool is_zero_terminated = false;
+    std::shared_ptr<TypeInfo> underlying_type;
 };
 
 struct AliasInfo : public BaseInfo, public IDocumentatable

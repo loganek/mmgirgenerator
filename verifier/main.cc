@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <vector>
+#include <set>
 #include <iostream>
 #include <fstream>
 
@@ -20,7 +21,14 @@ void remove_param_name(std::string& name)
     name = name.erase(p2, p1-p2+1);
 }
 
-std::vector<std::string> read_definitions(const std::string &filename, bool ignore_param_name = true)
+bool should_skip_this(const std::set<std::string>& skipped_entries, const std::string& line)
+{
+    return line.empty()
+            || line.front() == ';'
+            || skipped_entries.find(line.substr(1, line.find(' ')-1)) != skipped_entries.end();
+}
+
+std::vector<std::string> read_definitions(const std::string &filename, bool ignore_param_name = true, const std::set<std::string>& skipped_entries = {})
 {
     std::ifstream file(filename);
 
@@ -34,7 +42,7 @@ std::vector<std::string> read_definitions(const std::string &filename, bool igno
     while (getline(file, line))
     {
         trim(line);
-        if (line.empty()) continue;
+        if (should_skip_this(skipped_entries, line)) continue;
 
         if (!p_ctr) def = "";
 
@@ -61,6 +69,7 @@ std::vector<std::string> read_definitions(const std::string &filename, bool igno
     }
 
     std::sort(definitions.begin(), definitions.end());
+    definitions.erase(std::unique(definitions.begin(), definitions.end()), definitions.end());
 
     return definitions;
 }
@@ -68,15 +77,21 @@ std::vector<std::string> read_definitions(const std::string &filename, bool igno
 int main(int argc, char **argv)
 {
     if (argc < 3) {
-        std::cerr << "Usage: " << argv[0] << " <defs_file_1> <defs_file_2>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <defs_file_1> <defs_file_2> [SKIPPED_ENTRIES...]" << std::endl;
         return 1;
+    }
+
+    std::set<std::string> skipped_entries;
+    for (int i = 3; i < argc; i++) {
+        skipped_entries.insert(argv[i]);
     }
 
     std::string defs_file_1 = argv[1];
     std::string defs_file_2 = argv[2];
 
-    std::vector<std::string> definitions1 = read_definitions(defs_file_1);
-    std::vector<std::string> definitions2 = read_definitions(defs_file_2);
+
+    std::vector<std::string> definitions1 = read_definitions(defs_file_1, true, skipped_entries);
+    std::vector<std::string> definitions2 = read_definitions(defs_file_2, true, skipped_entries);
 
     std::size_t i = 0, j = 0;
     while (i < definitions1.size() && j < definitions2.size()) {
@@ -88,6 +103,13 @@ int main(int argc, char **argv)
         } else if (definitions1[i] > definitions2[j]) {
             std::cout << "From definitions2: " << definitions2[j++] << std::endl;
         }
+    }
+
+    while (i < definitions1.size()) {
+        std::cout << "From definitions1: " << definitions1[i++] << std::endl;
+    }
+    while (j < definitions2.size()) {
+        std::cout << "From definitions2: " << definitions2[j++] << std::endl;
     }
 
     std::cout << "Operation completed!" << std::endl;

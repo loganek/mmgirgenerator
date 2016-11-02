@@ -43,6 +43,11 @@ MainOptionGroup::MainOptionGroup()
     signal_entry.set_description("Print definitions of signals");
     add_entry(signal_entry, print_signal);
 
+    Glib::OptionEntry property_entry;
+    property_entry.set_long_name("print-property");
+    property_entry.set_description("Print definitions of properties");
+    add_entry(property_entry, print_property);
+
     Glib::OptionEntry entry_remaining;
     entry_remaining.set_long_name(G_OPTION_REMAINING);
     add_entry_filename(entry_remaining, packages);

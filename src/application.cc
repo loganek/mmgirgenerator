@@ -78,15 +78,17 @@ void Application::print_definitions()
         {
             printer.print_enums();
         }
-
         if (group.print_vfunc)
         {
             printer.print_virtual_methods();
         }
-
         if (group.print_signal)
         {
             printer.print_signals();
+        }
+        if (group.print_property)
+        {
+            printer.print_properties();
         }
     }
 }

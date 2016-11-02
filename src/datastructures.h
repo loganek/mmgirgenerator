@@ -59,6 +59,16 @@ struct ConstantInfo : public BaseInfo, public IDocumentatable
     std::shared_ptr<TypeInfo> type;
 };
 
+struct PropertyInfo : public BaseInfo, public IDocumentatable
+{
+    std::shared_ptr<TypeInfo> type;
+    bool writable = false;
+    bool readable = true;
+    bool construct_only = false;
+    TransferOwnership transfer_ownership;
+    bool deprecated = false;
+};
+
 struct EnumInfo : public BaseInfo, public IDocumentatable
 {
     struct MemberInfo : public BaseInfo, public IDocumentatable
@@ -117,11 +127,13 @@ struct StructureInfo : public BaseInfo, public IDocumentatable
 struct ClassInfo : public StructureInfo
 {
     std::vector<std::string> implemented_interfaces;
+    std::vector<std::shared_ptr<PropertyInfo>> properties;
 };
 
 struct InterfaceInfo : public StructureInfo
 {
     std::vector<std::string> prerequisites;
+    std::vector<std::shared_ptr<PropertyInfo>> properties;
 };
 
 struct NamespaceInfo : public BaseInfo

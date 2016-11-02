@@ -4,6 +4,19 @@
 
 namespace GirGen {
 
+template<typename T>
+static T read_numeric_attribute(const xmlpp::Element* element, const std::string attribute_name, T default_value)
+{
+    if (auto attribute = element->get_attribute(attribute_name))
+    {
+        return static_cast<T>(std::stoll(attribute->get_value()));
+    }
+    else
+    {
+        return default_value;
+    }
+}
+
 const xmlpp::Element* RepositoryLoader::to_element(const xmlpp::Node *node)
 {
     return dynamic_cast<const xmlpp::Element*>(node);
@@ -171,6 +184,10 @@ std::shared_ptr<ClassInfo> RepositoryLoader::load_class(const xmlpp::Element *el
         {
             class_info->implemented_interfaces.push_back(to_element(child)->get_attribute_value("name"));
         }
+        else if (child->get_name() == "property")
+        {
+            class_info->properties.push_back(load_property(to_element(child)));
+        }
     }
 
     return class_info;
@@ -188,9 +205,31 @@ std::shared_ptr<InterfaceInfo> RepositoryLoader::load_interface(const xmlpp::Ele
         {
             interface_info->prerequisites.push_back(to_element(child)->get_attribute_value("name"));
         }
+        else if (child->get_name() == "property")
+        {
+            interface_info->properties.push_back(load_property(to_element(child)));
+        }
     }
 
     return interface_info;
+}
+
+std::shared_ptr<PropertyInfo> RepositoryLoader::load_property(const xmlpp::Element *element)
+{
+    auto property_info = std::make_shared<PropertyInfo>();
+
+    property_info->name = element->get_attribute_value("name");
+
+    read_documentation(element, property_info);
+
+    property_info->deprecated = read_numeric_attribute(element, "deprecated", false);
+    property_info->writable = read_numeric_attribute(element, "writable", false);
+    property_info->readable = read_numeric_attribute(element, "readable", true);
+    property_info->construct_only = read_numeric_attribute(element, "construct-only", false);
+    property_info->transfer_ownership = transfer_ownership_from_string(element->get_attribute_value("transfer-ownership"));
+    property_info->type = read_type(element);
+
+    return property_info;
 }
 
 void RepositoryLoader::load_callable(const xmlpp::Element *element, const std::shared_ptr<CallableInfo> &callable)
@@ -227,11 +266,7 @@ void RepositoryLoader::load_structure(const xmlpp::Element *element, const std::
     }
 
     structure->parent_name = element->get_attribute_value("parent");
-
-    if (element->get_attribute("abstract"))
-    {
-        structure->is_abstract = static_cast<bool>(std::stoi(element->get_attribute_value("abstract")));
-    }
+    structure->is_abstract = read_numeric_attribute(element, "abstract", false);
 
     read_documentation(element, structure);
 
@@ -315,18 +350,9 @@ std::shared_ptr<TypeInfo> RepositoryLoader::read_type(const xmlpp::Node *parent_
             arr_type->c_type = element->get_attribute_value("type", "c");
             arr_type->underlying_type = read_type(child);
 
-            if (element->get_attribute("length"))
-            {
-                arr_type->length = std::stoi(element->get_attribute_value("length"));
-            }
-            if (element->get_attribute("fixed-size"))
-            {
-                arr_type->fixed_size = std::stoi(element->get_attribute_value("fixed-size"));
-            }
-            if (element->get_attribute("zero-terminated"))
-            {
-                arr_type->is_zero_terminated = static_cast<bool>(std::stoi(element->get_attribute_value("zero-terminated")));
-            }
+            arr_type->is_zero_terminated = read_numeric_attribute(element, "length", 0);
+            arr_type->is_zero_terminated = read_numeric_attribute(element, "fixed-size", 0);
+            arr_type->is_zero_terminated = read_numeric_attribute(element, "zero-terminated", false);
 
             type = arr_type;
         }

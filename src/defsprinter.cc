@@ -107,33 +107,38 @@ void DefsPrinter::print_signals(const std::vector<std::shared_ptr<SignalInfo>> &
     }
 }
 
-static std::string get_c_type_name(const std::shared_ptr<NamespaceCollection>& nspace_collection, const std::string& type_name, const std::string& current_namespace)
+std::string DefsPrinter::get_c_type_name(const std::shared_ptr<TypeInfo>& type_info) const
 {
-    auto enum_info = nspace_collection->find_enum_by_name(type_name, current_namespace);
+    if (!type_info->c_type.empty())
+    {
+        return type_info->c_type;
+    }
+
+    auto enum_info = nspace_collection->find_enum_by_name(type_info->name, nspace->name);
     if (enum_info)
     {
         return enum_info->c_type;
     }
 
-    auto structure_info = nspace_collection->find_structure_by_name(type_name, current_namespace);
+    auto structure_info = nspace_collection->find_structure_by_name(type_info->name, nspace->name);
     if (structure_info)
     {
         return structure_info->c_type + "*";
     }
 
-    auto alias_info = nspace_collection->find_alias_by_name(type_name, current_namespace);
+    auto alias_info = nspace_collection->find_alias_by_name(type_info->name, nspace->name);
     if (alias_info)
     {
         return alias_info->c_type;
     }
 
     // TODO is array
-    if (type_name == "utf8")
+    if (type_info->name == "utf8")
     {
         return "gchar*";
     }
 
-    throw std::runtime_error("unknown type " + type_name); // TODO warning instead of exception
+    throw std::runtime_error("unknown type " + type_info->name); // TODO warning instead of exception
 }
 
 void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable) const
@@ -158,14 +163,14 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
             {
                 is_array = true;
                 if (!arr_type->c_type.empty()) c_type = arr_type->c_type;
-                else if (!arr_type->name.empty()) c_type = get_c_type_name(nspace_collection, arr_type->name, nspace->name);
+                else if (!arr_type->name.empty()) c_type = get_c_type_name(arr_type);
                 else type = arr_type->underlying_type;
             }
 
             if (c_type.empty())
             {
                 c_type = type->c_type.empty() ?
-                        get_c_type_name(nspace_collection, type->name, nspace->name) : parameter->type->c_type;
+                        get_c_type_name(type) : parameter->type->c_type;
                 if (is_array) c_type += "*";
             }
 
@@ -185,6 +190,92 @@ void DefsPrinter::print_callable_header(const std::string &type, const std::stri
     std::cout << "(define-" << type << " " << callable->name << std::endl;
     std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
     std::cout << "  (return-type \"" << callable->return_value->type->c_type << "\")" << std::endl;
+}
+
+std::string DefsPrinter::get_property_type(const std::shared_ptr<TypeInfo>& type_info) const
+{
+    // TODO this function have to be re-implemented, if is used in the future.
+
+    static std::map<std::string, std::string> type_map = {
+        { "boolean", "GParamBoolean" },
+        { "double", "GParamDouble" },
+        { "float", "GParamFloat" },
+        { "GType", "GParamGType" },
+        { "int", "GParamInt" },
+        { "gint64", "GParamInt64" },
+        { "unsigned", "GParamUInt" },
+        { "guint64", "GParamUInt64" },
+        { "unsigned long", "GParamULong" },
+        { "GVariant", "GParamVariant" },
+        { "gchar*", "GParamString" },
+
+    };
+
+    std::string c_type = get_c_type_name(type_info);
+
+    auto it = type_map.find(c_type);
+    if (it != type_map.end())
+    {
+        return it->second;
+    }
+
+    /*
+    "GParamUnichar"
+    "GstParamFraction"
+    "GParamEnum"
+    "GParamFlags"
+    "GParamBoxed"
+    "GParamObject
+    */
+
+    if (c_type.back() == '*')
+    {
+        return "GParamPointer";
+    }
+
+    throw std::runtime_error("Don't know how to map property type " + c_type);
+}
+
+void DefsPrinter::print_properties() const
+{
+    for (auto class_info : nspace->classes)
+    {
+        print_properties(class_info->properties, class_info->c_type);
+    }
+    for (auto interface_info : nspace->interfaces)
+    {
+        print_properties(interface_info->properties, interface_info->c_type);
+    }
+}
+
+void DefsPrinter::print_properties(const std::vector<std::shared_ptr<PropertyInfo>>& properties, const std::string& parent_ctype) const
+{
+    for (auto property : properties)
+    {
+        std::string doc = property->documentation;
+        std::replace(doc.begin(), doc.end(), '\n', ' '), doc.end();
+
+        std::cout << "(define-property " << property->name << std::endl;
+        std::cout << "  (of-object \"" << parent_ctype << "\")" << std::endl;
+
+        // TODO does the generator use this line?
+        //std::cout << "  (prop-type\"" << get_property_type(property->type) << "\")" << std::endl;
+
+        if (!doc.empty())
+        {
+            std::cout << "  (docs \"" << doc << "\")" << std::endl;
+        }
+
+        std::cout << "  (readable #" << (property->readable ? 't' : 'f') << ")" << std::endl;
+        std::cout << "  (writable #" << (property->writable ? 't' : 'f') << ")" << std::endl;
+        std::cout << "  (construct-only #" << (property->construct_only ? 't' : 'f') << ")" << std::endl;
+
+        if (property->deprecated)
+        {
+            std::cout << "  (deprecated #t)" << std::endl;
+        }
+        std::cout << ")" << std::endl << std::endl;
+    }
 }
 
 }

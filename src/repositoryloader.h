@@ -25,6 +25,7 @@ private:
     std::shared_ptr<SignalInfo> load_signal(const xmlpp::Element *element);
     std::shared_ptr<CallableInfo::ReturnValue> load_return_value(const xmlpp::Node *node);
     std::vector<std::shared_ptr<CallableInfo::ParameterInfo>> load_parameters(const xmlpp::Node *node);
+    std::shared_ptr<PropertyInfo> load_property(const xmlpp::Element *element);
 
     void load_structure(const xmlpp::Element *element, const std::shared_ptr<StructureInfo> &structure);
     void load_callable(const xmlpp::Element *element, const std::shared_ptr<CallableInfo> &callable);

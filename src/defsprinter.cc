@@ -111,7 +111,8 @@ void DefsPrinter::print_signals(const std::vector<std::shared_ptr<SignalInfo>> &
         std::cout << "  (return-type \"" << sgnl->return_value->type->c_type << "\")" << std::endl;
         std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
 
-        print_callable_parameters(sgnl);
+        // All signal parameters that are registered as GTK_TYPE_STRING are actually const gchar*.
+        print_callable_parameters(sgnl, true);
 
         std::cout << ")" << std::endl << std::endl;
     }
@@ -151,7 +152,7 @@ std::string DefsPrinter::get_c_type_name(const std::shared_ptr<TypeInfo>& type_i
     throw std::runtime_error("unknown type " + type_info->name); // TODO warning instead of exception
 }
 
-void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable) const
+void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool force_conts_string) const
 {
     // TODO might instance_param appear as non-first parameter?
     bool has_instance_param = callable->parameters.size() > 0 && callable->parameters[0]->is_instance_param;
@@ -183,6 +184,9 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
                         get_c_type_name(type) : parameter->type->c_type;
                 if (is_array) c_type += "*";
             }
+
+            if (force_conts_string && c_type == "gchar*")
+                c_type = "const-gchar*";
 
             std::cout << "   '(\"" << prepare_c_type(c_type) << "\" \"" << parameter->name << "\")" << std::endl;
         }

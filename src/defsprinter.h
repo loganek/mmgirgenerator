@@ -21,7 +21,7 @@ class DefsPrinter
     void print_signals(const std::vector<std::shared_ptr<SignalInfo>> &signal_objects, const std::string &parent_c_type) const;
     void print_properties(const std::vector<std::shared_ptr<PropertyInfo>>& properties, const std::string& parent_ctype) const;
 
-    void print_callable_parameters(const std::shared_ptr<CallableInfo> &callable) const;
+    void print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool force_conts_string = false) const;
 
 public:
     DefsPrinter(const std::string &nspace_name, const std::shared_ptr<NamespaceCollection> &nspace_collection, const std::map<std::string, std::string>& namespace_mapping)

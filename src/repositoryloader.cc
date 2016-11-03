@@ -165,7 +165,10 @@ std::shared_ptr<SignalInfo> RepositoryLoader::load_signal(const xmlpp::Element *
 {
     auto signal = std::make_shared<SignalInfo>();
 
-    signal->when = emission_stage_from_string(element->get_attribute_value("when"));
+    if (element->get_attribute("when"))
+    {
+        signal->when = emission_stage_from_string(element->get_attribute_value("when"));
+    }
 
     load_callable(element, signal);
 
@@ -238,6 +241,7 @@ void RepositoryLoader::load_callable(const xmlpp::Element *element, const std::s
 
     // TODO moved-to attribute should probably have precendence here
     callable->name = element->get_attribute_value("name");
+    callable->throws = read_numeric_attribute<bool>(element, "throws", false);
 
     for (const auto& child : element->get_children())
     {

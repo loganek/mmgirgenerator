@@ -48,6 +48,11 @@ MainOptionGroup::MainOptionGroup()
     property_entry.set_description("Print definitions of properties");
     add_entry(property_entry, print_property);
 
+    Glib::OptionEntry function_entry;
+    function_entry.set_long_name("print-function");
+    function_entry.set_description("Print definitions of functions");
+    add_entry(function_entry, print_function);
+
     Glib::OptionEntry entry_remaining;
     entry_remaining.set_long_name(G_OPTION_REMAINING);
     add_entry_filename(entry_remaining, packages);

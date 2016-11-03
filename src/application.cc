@@ -90,6 +90,10 @@ void Application::print_definitions()
         {
             printer.print_properties();
         }
+        if (group.print_function)
+        {
+            printer.print_free_functions();
+        }
     }
 }
 

@@ -24,6 +24,7 @@ public:
     bool print_enum = false;
     bool print_signal = false;
     bool print_property = false;
+    bool print_function = false;
     Glib::ustring req_namespace;
     std::map<std::string, std::string> namespace_mapping;
     Glib::OptionGroup::vecstrings packages;

@@ -5,6 +5,12 @@
 
 namespace GirGen {
 
+static std::string prepare_c_type(std::string c_type)
+{
+    std::replace(c_type.begin(), c_type.end(), ' ', '-');
+    return c_type;
+}
+
 void DefsPrinter::print_enums() const
 {
     for (std::shared_ptr<EnumInfo> enum_info : nspace->enumerations)
@@ -40,12 +46,12 @@ void DefsPrinter::print_virtual_methods() const
 {
     for (std::shared_ptr<ClassInfo> class_info : nspace->classes)
     {
-        print_functions(class_info->methods, class_info->c_type);
+        print_virtual_methods(class_info->methods, class_info->c_type);
     }
 
     for (std::shared_ptr<InterfaceInfo> interface_info : nspace->interfaces)
     {
-        print_functions(interface_info->methods, interface_info->c_type);
+        print_virtual_methods(interface_info->methods, interface_info->c_type);
     }
 }
 
@@ -62,7 +68,7 @@ void DefsPrinter::print_signals() const
     }
 }
 
-void DefsPrinter::print_functions(const std::vector<std::shared_ptr<FunctionInfo>> &functions, const std::string &parent_c_type) const
+void DefsPrinter::print_virtual_methods(const std::vector<std::shared_ptr<FunctionInfo>> &functions, const std::string &parent_c_type) const
 {
     for (std::shared_ptr<FunctionInfo> fnc : functions)
     {
@@ -71,7 +77,10 @@ void DefsPrinter::print_functions(const std::vector<std::shared_ptr<FunctionInfo
             continue;
         }
 
-        print_callable_header("vfunc", parent_c_type, fnc);
+        std::cout << "(define-vfunc " << fnc->name << std::endl;
+        std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
+        std::cout << "  (return-type \"" << fnc->return_value->type->c_type << "\")" << std::endl;
+
         print_callable_parameters(fnc);
 
         std::cout << ")" << std::endl << std::endl;
@@ -97,8 +106,9 @@ void DefsPrinter::print_signals(const std::vector<std::shared_ptr<SignalInfo>> &
 {
     for (std::shared_ptr<SignalInfo> sgnl : signal_objects)
     {
-        print_callable_header("signal", parent_c_type, sgnl);
-
+        std::cout << "(define-signal " << sgnl->name << std::endl;
+        std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
+        std::cout << "  (return-type \"" << sgnl->return_value->type->c_type << "\")" << std::endl;
         std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
 
         print_callable_parameters(sgnl);
@@ -174,7 +184,7 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
                 if (is_array) c_type += "*";
             }
 
-            std::cout << "   '(\"" << c_type << "\" \"" << parameter->name << "\")" << std::endl;
+            std::cout << "   '(\"" << prepare_c_type(c_type) << "\" \"" << parameter->name << "\")" << std::endl;
         }
         if (callable->throws)
         {
@@ -183,13 +193,6 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
 
         std::cout << "  )" << std::endl;
     }
-}
-
-void DefsPrinter::print_callable_header(const std::string &type, const std::string& parent_c_type, const std::shared_ptr<CallableInfo> &callable) const
-{
-    std::cout << "(define-" << type << " " << callable->name << std::endl;
-    std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
-    std::cout << "  (return-type \"" << callable->return_value->type->c_type << "\")" << std::endl;
 }
 
 std::string DefsPrinter::get_property_type(const std::shared_ptr<TypeInfo>& type_info) const
@@ -274,6 +277,21 @@ void DefsPrinter::print_properties(const std::vector<std::shared_ptr<PropertyInf
         {
             std::cout << "  (deprecated #t)" << std::endl;
         }
+        std::cout << ")" << std::endl << std::endl;
+    }
+}
+
+void DefsPrinter::print_free_functions() const
+{
+    for (const auto& fnc : nspace->functions)
+    {
+        std::cout << "(define-function " << fnc->c_identifier << std::endl;
+        std::cout << "  (c-name \"" << fnc->c_identifier << "\")" << std::endl;
+
+        std::cout << "  (return-type \"" << prepare_c_type(fnc->return_value->type->c_type) << "\")" << std::endl;
+
+        print_callable_parameters(fnc);
+
         std::cout << ")" << std::endl << std::endl;
     }
 }

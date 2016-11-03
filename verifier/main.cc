@@ -21,6 +21,15 @@ void remove_param_name(std::string& name)
     name = name.erase(p2, p1-p2+1);
 }
 
+bool is_enum(const std::string& line)
+{
+    std::string enum_def = "(define-enum-extended";
+    std::string flags_def = "(define-flags-extended";
+
+    return (line.substr(0, enum_def.size()) == enum_def
+            || line.substr(0, flags_def.size()) == flags_def);
+}
+
 bool should_skip_this(const std::set<std::string>& skipped_entries, const std::string& line)
 {
     return line.empty()
@@ -37,7 +46,8 @@ std::vector<std::string> read_definitions(const std::string &filename, bool igno
     std::string def;
     int p_ctr = 0;
 
-    bool parameters = false;;
+    bool parameters = false;
+    bool enums = false;
 
     while (getline(file, line))
     {
@@ -50,7 +60,13 @@ std::vector<std::string> read_definitions(const std::string &filename, bool igno
         bool back_p = line.back() == ')';
 
         if (parameters && back_p && !front_p)
+        {
             parameters = false;
+            enums = false;
+        }
+
+        if (enums)
+            std::replace(line.begin(), line.end(), '-', '_');
 
         if (parameters && ignore_param_name)
             remove_param_name(line);
@@ -58,7 +74,8 @@ std::vector<std::string> read_definitions(const std::string &filename, bool igno
 
         if (line == "(parameters")
             parameters = true;
-
+        else if (is_enum(line))
+            enums = true;
 
         p_ctr += front_p;
         p_ctr -= back_p;

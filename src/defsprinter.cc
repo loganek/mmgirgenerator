@@ -261,6 +261,7 @@ void DefsPrinter::print_properties(const std::vector<std::shared_ptr<PropertyInf
     {
         std::string doc = property->documentation;
         std::replace(doc.begin(), doc.end(), '\n', ' '), doc.end();
+        std::replace(doc.begin(), doc.end(), '"', '\''), doc.end();
 
         std::cout << "(define-property " << property->name << std::endl;
         std::cout << "  (of-object \"" << parent_ctype << "\")" << std::endl;

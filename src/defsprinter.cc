@@ -7,7 +7,14 @@ namespace GirGen {
 
 static std::string prepare_c_type(std::string c_type)
 {
-    std::replace(c_type.begin(), c_type.end(), ' ', '-');
+    std::string const_str = "const ";
+    auto pos = c_type.find(const_str);
+    if (pos != std::string::npos)
+    {
+        c_type[pos + const_str.size()-1] = '-';
+    }
+
+    c_type.erase(std::remove_if(c_type.begin(), c_type.end(), ::isspace), c_type.end());
     return c_type;
 }
 
@@ -79,7 +86,7 @@ void DefsPrinter::print_virtual_methods(const std::vector<std::shared_ptr<Functi
 
         std::cout << "(define-vfunc " << fnc->name << std::endl;
         std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
-        std::cout << "  (return-type \"" << fnc->return_value->type->c_type << "\")" << std::endl;
+        std::cout << "  (return-type \"" << prepare_c_type(fnc->return_value->type->c_type) << "\")" << std::endl;
 
         print_callable_parameters(fnc);
 

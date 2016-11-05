@@ -53,12 +53,12 @@ void DefsPrinter::print_virtual_methods() const
 {
     for (std::shared_ptr<ClassInfo> class_info : nspace->classes)
     {
-        print_virtual_methods(class_info->methods, class_info->c_type);
+        print_virtual_methods(class_info->functions, class_info->c_type);
     }
 
     for (std::shared_ptr<InterfaceInfo> interface_info : nspace->interfaces)
     {
-        print_virtual_methods(interface_info->methods, interface_info->c_type);
+        print_virtual_methods(interface_info->functions, interface_info->c_type);
     }
 }
 

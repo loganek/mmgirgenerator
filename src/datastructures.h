@@ -107,6 +107,7 @@ struct FunctionInfo : public CallableInfo
 
     bool is_virtual = false;
     bool is_constructor = false;
+    bool is_method = false;
 };
 
 struct SignalInfo : public CallableInfo
@@ -119,7 +120,6 @@ struct StructureInfo : public BaseInfo, public IDocumentatable
     std::string c_type;
     std::string parent_name;
     bool is_abstract = false;
-    std::vector<std::shared_ptr<FunctionInfo>> methods;
     std::vector<std::shared_ptr<FunctionInfo>> functions;
     std::vector<std::shared_ptr<SignalInfo>> glib_signals;
 };

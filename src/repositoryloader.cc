@@ -276,18 +276,15 @@ void RepositoryLoader::load_structure(const xmlpp::Element *element, const std::
 
     for (const auto& child : element->get_children())
     {
-        if (child->get_name() == "method" || child->get_name() == "virtual-method" || child->get_name() == "constructor")
+        if (child->get_name() == "method" || child->get_name() == "virtual-method" || child->get_name() == "constructor" || child->get_name() == "function")
         {
             auto fnc = load_function(to_element(child));
 
             fnc->is_virtual = child->get_name() == "virtual-method";
             fnc->is_constructor = child->get_name() == "constructor";
+            fnc->is_method = child->get_name() != "function";
 
-            structure->methods.push_back(fnc);
-        }
-        else if (child->get_name() == "function")
-        {
-            structure->functions.push_back(load_function(to_element(child)));
+            structure->functions.push_back(fnc);
         }
         else if (child->get_name() == "signal")
         {

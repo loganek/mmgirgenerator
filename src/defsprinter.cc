@@ -7,14 +7,7 @@ namespace GirGen {
 
 static std::string prepare_c_type(std::string c_type)
 {
-    std::string const_str = "const ";
-    auto pos = c_type.find(const_str);
-    if (pos != std::string::npos)
-    {
-        c_type[pos + const_str.size()-1] = '-';
-    }
-
-    c_type.erase(std::remove_if(c_type.begin(), c_type.end(), ::isspace), c_type.end());
+    std::replace(c_type.begin(), c_type.end(), ' ', '-');
     return c_type;
 }
 

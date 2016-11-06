@@ -22,7 +22,7 @@ void DefsPrinter::print_virtual_method(std::shared_ptr<FunctionInfo> &vmethod, c
     std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
     std::cout << "  (return-type \"" << prepare_c_type(vmethod->return_value->type->c_type) << "\")" << std::endl;
 
-    print_callable_parameters(vmethod);
+    print_callable_parameters(vmethod, true);
 
     std::cout << ")" << std::endl << std::endl;
 }
@@ -50,7 +50,7 @@ void DefsPrinter::print_signal(const std::shared_ptr<SignalInfo> &sgnl, const st
     std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
 
     // All signal parameters that are registered as GTK_TYPE_STRING are actually const gchar*.
-    print_callable_parameters(sgnl, true);
+    print_callable_parameters(sgnl, false, true);
 
     std::cout << ")" << std::endl << std::endl;
 }
@@ -89,17 +89,14 @@ std::string DefsPrinter::get_c_type_name(const std::shared_ptr<TypeInfo>& type_i
     throw std::runtime_error("unknown type " + type_info->name); // TODO warning instead of exception
 }
 
-void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool force_conts_string) const
+void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool is_method, bool force_conts_string) const
 {
-    // TODO might instance_param appear as non-first parameter?
-    bool has_instance_param = callable->parameters.size() > 0 && callable->parameters[0]->is_instance_param;
-
-    if (callable->parameters.size() > has_instance_param || callable->throws)
+    if (callable->parameters.size() > is_method || callable->throws)
     {
         std::cout << "  (parameters" << std::endl;
         for (std::shared_ptr<FunctionInfo::ParameterInfo> parameter : callable->parameters)
         {
-            if (parameter->is_instance_param)
+            if (is_method && parameter->is_instance_param)
             {
                 continue;
             }

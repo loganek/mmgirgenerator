@@ -20,7 +20,7 @@ class DefsPrinter
     void print_property(const std::shared_ptr<PropertyInfo>& properties, const std::shared_ptr<StructureInfo>& parent_ctype) const;
     void print_function(const std::shared_ptr<FunctionInfo>& fnc, const std::shared_ptr<StructureInfo>& parent) const;
 
-    void print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool force_conts_string = false) const;
+    void print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool is_method, bool force_conts_string = false) const;
 
 public:
     DefsPrinter(const std::string &nspace_name, const std::shared_ptr<NamespaceCollection> &nspace_collection, const std::map<std::string, std::string>& namespace_mapping)

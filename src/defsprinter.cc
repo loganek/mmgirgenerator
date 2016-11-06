@@ -132,11 +132,11 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
             if (force_conts_string && c_type == "gchar*")
                 c_type = "const-gchar*";
 
-            std::cout << "   '(\"" << prepare_c_type(c_type) << "\" \"" << parameter->name << "\")" << std::endl;
+            std::cout << "    '(\"" << prepare_c_type(c_type) << "\" \"" << parameter->name << "\")" << std::endl;
         }
         if (callable->throws)
         {
-            std::cout << "   '(\"GError**\" \"error\")" << std::endl;
+            std::cout << "    '(\"GError**\" \"error\")" << std::endl;
         }
 
         std::cout << "  )" << std::endl;
@@ -171,20 +171,30 @@ void DefsPrinter::print_property(const std::shared_ptr<PropertyInfo>& property, 
     std::cout << ")" << std::endl << std::endl;
 }
 
+static bool is_function_method(const std::shared_ptr<FunctionInfo>& fnc, const std::shared_ptr<StructureInfo> &parent)
+{
+    if (!fnc->is_method || fnc->is_constructor)
+    {
+        return false;
+    }
+
+    auto inst_param_ctype = fnc->get_instance_parameter()->type->c_type;
+    std::string const_str = "const ";
+    if (inst_param_ctype.find(const_str) == 0)
+    {
+        inst_param_ctype = inst_param_ctype.substr(const_str.length());
+    }
+    if (inst_param_ctype.back() == '*')
+    {
+        inst_param_ctype.pop_back();
+    }
+
+    return inst_param_ctype == parent->c_type;
+}
+
 void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const std::shared_ptr<StructureInfo>& parent) const
 {
-
-    bool is_method = fnc->is_method && !fnc->is_constructor;
-
-    if (is_method && fnc->parameters[0]->is_instance_param && !fnc->parameters[0]->type->c_type.empty())
-    {
-        std::string const_str = "const ";
-        std::string tmp_ctype = fnc->parameters[0]->type->c_type;
-        auto const_pos = tmp_ctype.find(const_str);
-        if (const_pos != std::string::npos)
-            tmp_ctype = tmp_ctype.substr(const_str.size());
-        is_method = (parent->c_type+"*") == tmp_ctype;
-    }
+    bool is_method = is_function_method(fnc, parent);
 
     std::cout << "(define-" << (is_method ? "method" : "function") << " " << (is_method ? fnc->name : fnc->c_identifier) << std::endl;
 

@@ -109,6 +109,15 @@ struct FunctionInfo : public CallableInfo
     bool is_virtual = false;
     bool is_constructor = false;
     bool is_method = false;
+
+    std::shared_ptr<CallableInfo::ParameterInfo> get_instance_parameter() const
+    {
+        for (auto parameter : parameters)
+        {
+            if (parameter->is_instance_param) return parameter;
+        }
+        throw std::runtime_error("instance parameter not found");
+    }
 };
 
 struct SignalInfo : public CallableInfo

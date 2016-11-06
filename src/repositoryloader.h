@@ -18,6 +18,7 @@ private:
 
     std::shared_ptr<AliasInfo> load_alias(const xmlpp::Element *element);
     std::shared_ptr<ClassInfo> load_class(const xmlpp::Element *element);
+    std::shared_ptr<UnionInfo> load_union(const xmlpp::Element *element);
     std::shared_ptr<InterfaceInfo> load_interface(const xmlpp::Element *element);
     std::shared_ptr<ConstantInfo> load_constant(const xmlpp::Element *element);
     std::shared_ptr<EnumInfo> load_enumeration(const xmlpp::Element *element);

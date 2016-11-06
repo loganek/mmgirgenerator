@@ -82,6 +82,10 @@ void RepositoryLoader::load_namespace(const xmlpp::Element *element, const std::
         {
             nspace->interfaces.push_back(load_interface(to_element(child)));
         }
+        else if (child->get_name() == "union")
+        {
+            nspace->unions.push_back(load_union(to_element(child)));
+        }
     }
 }
 
@@ -219,6 +223,15 @@ std::shared_ptr<InterfaceInfo> RepositoryLoader::load_interface(const xmlpp::Ele
     }
 
     return interface_info;
+}
+
+std::shared_ptr<UnionInfo> RepositoryLoader::load_union(const xmlpp::Element *element)
+{
+    auto union_info = std::make_shared<UnionInfo>();
+
+    load_structure(element, union_info);
+
+    return union_info;
 }
 
 void RepositoryLoader::load_versionable(const xmlpp::Element *element, const std::shared_ptr<IVersionable>& versionable)

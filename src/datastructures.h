@@ -172,10 +172,15 @@ struct InterfaceInfo : public StructureInfo
     std::vector<std::shared_ptr<PropertyInfo>> properties;
 };
 
+struct UnionInfo : public StructureInfo
+{
+};
+
 struct NamespaceInfo : public BaseInfo
 {
     std::string c_prefix;
     std::vector<std::shared_ptr<ClassInfo>> classes;
+    std::vector<std::shared_ptr<UnionInfo>> unions;
     std::vector<std::shared_ptr<InterfaceInfo>> interfaces;
     std::vector<std::shared_ptr<FunctionInfo>> functions;
     std::vector<std::shared_ptr<AliasInfo>> aliases;

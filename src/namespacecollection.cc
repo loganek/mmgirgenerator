@@ -49,6 +49,11 @@ std::shared_ptr<StructureInfo> NamespaceCollection::find_structure_by_name(const
         return ret;
     }
 
+    if (ret = find_any_type(structure_name, default_namespace, &NamespaceInfo::unions))
+    {
+        return ret;
+    }
+
     return ret;
 }
 

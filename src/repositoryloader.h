@@ -33,9 +33,9 @@ private:
     std::shared_ptr<TypeInfo> read_type(const xmlpp::Node *parent_node);
     void read_documentation(const xmlpp::Node *parent_node, const std::shared_ptr<IDocumentatable> &documentable);
 
-    static TransferOwnership transfer_ownership_from_string(const std::string &str);
-    static Direction direction_from_string(const std::string &str);
-    static EmissionStage emission_stage_from_string(const std::string &str);
+    static TransferOwnership read_transfer_ownership_attribute(const xmlpp::Element *element, TransferOwnership default_value = DEFAULT_TRANSFER_OWNERSHIP_VALUE);
+    static Direction read_direction_attribute(const xmlpp::Element *element, Direction default_value = DEFAULT_DIRECTION_VALUE);
+    static EmissionStage read_emission_stage_attribute(const xmlpp::Element *element);
     static const xmlpp::Element* to_element(const xmlpp::Node *node);
 
 public:

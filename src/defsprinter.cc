@@ -221,11 +221,6 @@ void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const
     std::cout << "  (c-name \"" << fnc->c_identifier << "\")" << std::endl;
     std::cout << "  (return-type \"" << get_return_type(fnc->return_value) << "\")" << std::endl;
 
-    if (fnc->c_identifier == "g_io_channel_write_chars")
-    {
-        puts ("");
-    }
-
     print_callable_parameters(fnc, is_method);
 
     std::cout << ")" << std::endl << std::endl;

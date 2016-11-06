@@ -10,14 +10,22 @@ namespace GirGen {
 enum class TransferOwnership
 {
     None,
-    Full
+    Full,
+    Container
 };
+
+TransferOwnership transfer_ownership_from_string(const std::string &str);
+constexpr TransferOwnership DEFAULT_TRANSFER_OWNERSHIP_VALUE = TransferOwnership::None;
 
 enum class Direction
 {
     In,
-    Out
+    Out,
+    InOut
 };
+
+Direction direction_from_string(const std::string &str);
+constexpr Direction DEFAULT_DIRECTION_VALUE = Direction::In;
 
 enum class EmissionStage
 {
@@ -25,6 +33,8 @@ enum class EmissionStage
     Last,
     Cleanup
 };
+
+EmissionStage emission_stage_from_string(const std::string &str);
 
 struct BaseInfo
 {

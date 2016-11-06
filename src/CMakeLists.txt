@@ -3,7 +3,7 @@ add_executable(mmgirgenerator
   main.cc
   defsprinter.cc
   repositoryloader.cc
-  datastructures.h
+  datastructures.cc
   dependencyresolver.cc
   mainoptiongroup.cc
   namespacecollection.cc)

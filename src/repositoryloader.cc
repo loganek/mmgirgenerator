@@ -22,32 +22,29 @@ const xmlpp::Element* RepositoryLoader::to_element(const xmlpp::Node *node)
     return dynamic_cast<const xmlpp::Element*>(node);
 }
 
-TransferOwnership RepositoryLoader::transfer_ownership_from_string(const std::string &str)
+TransferOwnership RepositoryLoader::read_transfer_ownership_attribute(const xmlpp::Element *element, TransferOwnership default_value)
 {
-    return (str == "full") ? TransferOwnership::Full : TransferOwnership::None;
+    if (auto attribute = element->get_attribute("transfer-ownership"))
+    {
+        return transfer_ownership_from_string(attribute->get_value());
+    }
+
+    return default_value;
 }
 
-Direction RepositoryLoader::direction_from_string(const std::string &str)
+Direction RepositoryLoader::read_direction_attribute(const xmlpp::Element *element, Direction default_value)
 {
-    return (str == "out") ? Direction::Out : Direction::In;
+    if (auto attribute = element->get_attribute("direction"))
+    {
+        return direction_from_string(attribute->get_value());
+    }
+
+    return default_value;
 }
 
-EmissionStage RepositoryLoader::emission_stage_from_string(const std::string &str)
+EmissionStage RepositoryLoader::read_emission_stage_attribute(const xmlpp::Element *element)
 {
-    if (str == "first")
-    {
-        return EmissionStage::First;
-    }
-    if (str == "last")
-    {
-        return EmissionStage::Last;
-    }
-    if (str == "cleanup")
-    {
-        return EmissionStage::Cleanup;
-    }
-
-    throw std::runtime_error("unknown emission stage '" + str + "'");
+    return emission_stage_from_string(element->get_attribute_value("when"));
 }
 
 void RepositoryLoader::load_namespace(const xmlpp::Element *element, const std::shared_ptr<NamespaceInfo> &nspace)
@@ -170,10 +167,7 @@ std::shared_ptr<SignalInfo> RepositoryLoader::load_signal(const xmlpp::Element *
 {
     auto signal = std::make_shared<SignalInfo>();
 
-    if (element->get_attribute("when"))
-    {
-        signal->when = emission_stage_from_string(element->get_attribute_value("when"));
-    }
+    signal->when = read_emission_stage_attribute(element);
 
     load_callable(element, signal);
 
@@ -234,7 +228,7 @@ std::shared_ptr<PropertyInfo> RepositoryLoader::load_property(const xmlpp::Eleme
     property_info->writable = read_numeric_attribute(element, "writable", false);
     property_info->readable = read_numeric_attribute(element, "readable", true);
     property_info->construct_only = read_numeric_attribute(element, "construct-only", false);
-    property_info->transfer_ownership = transfer_ownership_from_string(element->get_attribute_value("transfer-ownership"));
+    property_info->transfer_ownership = read_transfer_ownership_attribute(element);
     property_info->type = read_type(element);
 
     return property_info;
@@ -310,8 +304,8 @@ std::vector<std::shared_ptr<CallableInfo::ParameterInfo>> RepositoryLoader::load
 
             auto parameter = std::make_shared<CallableInfo::ParameterInfo>();
 
-            parameter->transfer_ownership = transfer_ownership_from_string(element->get_attribute_value("transfer-ownership"));
-            parameter->direction = direction_from_string(element->get_attribute_value("direction"));
+            parameter->transfer_ownership = read_transfer_ownership_attribute(element);
+            parameter->direction = read_direction_attribute(element);
             parameter->name = element->get_attribute_value("name");
             read_documentation(child, parameter);
             parameter->type = read_type(child);
@@ -330,7 +324,7 @@ std::shared_ptr<CallableInfo::ReturnValue> RepositoryLoader::load_return_value(c
 
     read_documentation(node, return_value);
 
-    return_value->transfer_ownership = transfer_ownership_from_string(to_element(node)->get_attribute_value("transfer-ownership"));
+    return_value->transfer_ownership = read_transfer_ownership_attribute(to_element(node));
     return_value->type = read_type(node);
 
     return return_value;

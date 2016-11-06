@@ -36,7 +36,7 @@ private:
 
     static TransferOwnership read_transfer_ownership_attribute(const xmlpp::Element *element, TransferOwnership default_value = DEFAULT_TRANSFER_OWNERSHIP_VALUE);
     static Direction read_direction_attribute(const xmlpp::Element *element, Direction default_value = DEFAULT_DIRECTION_VALUE);
-    static EmissionStage read_emission_stage_attribute(const xmlpp::Element *element);
+    static EmissionStage read_emission_stage_attribute(const xmlpp::Element *element, EmissionStage default_value = DEFAULT_EMISSION_STAGE_VALUE);
     static const xmlpp::Element* to_element(const xmlpp::Node *node);
 
 public:

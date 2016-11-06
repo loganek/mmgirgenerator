@@ -35,6 +35,7 @@ enum class EmissionStage
 };
 
 EmissionStage emission_stage_from_string(const std::string &str);
+constexpr EmissionStage DEFAULT_EMISSION_STAGE_VALUE = EmissionStage::First;
 
 struct BaseInfo
 {

@@ -42,9 +42,14 @@ Direction RepositoryLoader::read_direction_attribute(const xmlpp::Element *eleme
     return default_value;
 }
 
-EmissionStage RepositoryLoader::read_emission_stage_attribute(const xmlpp::Element *element)
+EmissionStage RepositoryLoader::read_emission_stage_attribute(const xmlpp::Element *element, EmissionStage default_value)
 {
-    return emission_stage_from_string(element->get_attribute_value("when"));
+    if (auto attribute = element->get_attribute("when"))
+    {
+        return emission_stage_from_string(attribute->get_value());
+    }
+
+    return default_value;
 }
 
 void RepositoryLoader::load_namespace(const xmlpp::Element *element, const std::shared_ptr<NamespaceInfo> &nspace)

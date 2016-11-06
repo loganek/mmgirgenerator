@@ -20,6 +20,7 @@ class DefsPrinter
     void print_virtual_methods(const std::vector<std::shared_ptr<FunctionInfo>> &functions, const std::string &parent_c_type) const;
     void print_signals(const std::vector<std::shared_ptr<SignalInfo>> &signal_objects, const std::string &parent_c_type) const;
     void print_properties(const std::vector<std::shared_ptr<PropertyInfo>>& properties, const std::string& parent_ctype) const;
+    void print_function(const std::shared_ptr<FunctionInfo>& fnc, const std::shared_ptr<StructureInfo>& parent) const;
 
     void print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool force_conts_string = false) const;
 
@@ -34,7 +35,7 @@ public:
     void print_enums() const;
     void print_signals() const;
     void print_properties() const;
-    void print_free_functions() const;
+    void print_functions() const;
 };
 
 }

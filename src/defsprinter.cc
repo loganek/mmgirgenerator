@@ -188,7 +188,7 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
             if (c_type.empty())
             {
                 c_type = type->c_type.empty() ?
-                        get_c_type_name(type) : parameter->type->c_type;
+                            get_c_type_name(type) : parameter->type->c_type;
                 if (is_array) c_type += "*";
             }
 
@@ -293,18 +293,59 @@ void DefsPrinter::print_properties(const std::vector<std::shared_ptr<PropertyInf
     }
 }
 
-void DefsPrinter::print_free_functions() const
+void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const std::shared_ptr<StructureInfo>& parent) const
+{
+
+    bool is_method = fnc->is_method && !fnc->is_constructor;
+
+    if (is_method && fnc->parameters[0]->is_instance_param && !fnc->parameters[0]->type->c_type.empty())
+    {
+        std::string const_str = "const ";
+        std::string tmp_ctype = fnc->parameters[0]->type->c_type;
+        auto const_pos = tmp_ctype.find(const_str);
+        if (const_pos != std::string::npos)
+            tmp_ctype = tmp_ctype.substr(const_str.size());
+        is_method = (parent->c_type+"*") == tmp_ctype;
+    }
+
+    std::cout << "(define-" << (is_method ? "method" : "function") << " " << (is_method ? fnc->name : fnc->c_identifier) << std::endl;
+
+    if (is_method)
+    {
+        std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
+    }
+
+    std::cout << "  (c-name \"" << fnc->c_identifier << "\")" << std::endl;
+    std::cout << "  (return-type \"" << prepare_c_type(fnc->return_value->type->c_type) << "\")" << std::endl;
+
+    print_callable_parameters(fnc, is_method);
+
+    std::cout << ")" << std::endl << std::endl;
+}
+
+void DefsPrinter::print_functions() const
 {
     for (const auto& fnc : nspace->functions)
     {
-        std::cout << "(define-function " << fnc->c_identifier << std::endl;
-        std::cout << "  (c-name \"" << fnc->c_identifier << "\")" << std::endl;
+        print_function(fnc, std::shared_ptr<StructureInfo>());
+    }
 
-        std::cout << "  (return-type \"" << prepare_c_type(fnc->return_value->type->c_type) << "\")" << std::endl;
+    for (const auto& cls : nspace->classes)
+    {
+        for (const auto& fnc : cls->functions)
+        {
+            if (fnc->is_virtual) continue;
+            print_function(fnc, cls);
+        }
+    }
 
-        print_callable_parameters(fnc);
-
-        std::cout << ")" << std::endl << std::endl;
+    for (const auto& iface : nspace->interfaces)
+    {
+        for (const auto& fnc : iface->functions)
+        {
+            if (fnc->is_virtual) continue;
+            print_function(fnc, iface);
+        }
     }
 }
 

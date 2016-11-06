@@ -92,7 +92,7 @@ void Application::print_definitions()
         }
         if (group.print_function)
         {
-            printer.print_free_functions();
+            printer.print_functions();
         }
     }
 }

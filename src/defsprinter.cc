@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <set>
 
 namespace GirGen {
 
@@ -9,6 +10,26 @@ static std::string prepare_c_type(std::string c_type)
 {
     std::replace(c_type.begin(), c_type.end(), ' ', '-');
     return c_type;
+}
+
+static bool is_base_pointer(std::string c_type)
+{
+    if (c_type.back() != '*') return false;
+    c_type.pop_back();
+    std::set<std::string> base_types = {"gchar", "char", "void"};
+    return base_types.find(c_type) != base_types.end();
+}
+
+static std::string get_return_type(const std::shared_ptr<CallableInfo::ReturnValue>& return_value)
+{
+    std::string c_type = return_value->type->c_type;
+    std::string const_str = "const ";
+    if (return_value->transfer_ownership == TransferOwnership::None && is_base_pointer(c_type) && c_type.find(const_str) != 0)
+    {
+        c_type = const_str + c_type;
+    }
+
+    return prepare_c_type(c_type);
 }
 
 void DefsPrinter::print_virtual_method(std::shared_ptr<FunctionInfo> &vmethod, const std::shared_ptr<StructureInfo>& parent) const
@@ -20,7 +41,7 @@ void DefsPrinter::print_virtual_method(std::shared_ptr<FunctionInfo> &vmethod, c
 
     std::cout << "(define-vfunc " << vmethod->name << std::endl;
     std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
-    std::cout << "  (return-type \"" << prepare_c_type(vmethod->return_value->type->c_type) << "\")" << std::endl;
+    std::cout << "  (return-type \"" << get_return_type(vmethod->return_value) << "\")" << std::endl;
 
     print_callable_parameters(vmethod, true);
 
@@ -194,7 +215,7 @@ void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const
     }
 
     std::cout << "  (c-name \"" << fnc->c_identifier << "\")" << std::endl;
-    std::cout << "  (return-type \"" << prepare_c_type(fnc->return_value->type->c_type) << "\")" << std::endl;
+    std::cout << "  (return-type \"" << get_return_type(fnc->return_value) << "\")" << std::endl;
 
     print_callable_parameters(fnc, is_method);
 

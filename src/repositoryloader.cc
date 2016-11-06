@@ -27,6 +27,11 @@ TransferOwnership RepositoryLoader::transfer_ownership_from_string(const std::st
     return (str == "full") ? TransferOwnership::Full : TransferOwnership::None;
 }
 
+Direction RepositoryLoader::direction_from_string(const std::string &str)
+{
+    return (str == "out") ? Direction::Out : Direction::In;
+}
+
 EmissionStage RepositoryLoader::emission_stage_from_string(const std::string &str)
 {
     if (str == "first")
@@ -306,6 +311,7 @@ std::vector<std::shared_ptr<CallableInfo::ParameterInfo>> RepositoryLoader::load
             auto parameter = std::make_shared<CallableInfo::ParameterInfo>();
 
             parameter->transfer_ownership = transfer_ownership_from_string(element->get_attribute_value("transfer-ownership"));
+            parameter->direction = direction_from_string(element->get_attribute_value("direction"));
             parameter->name = element->get_attribute_value("name");
             read_documentation(child, parameter);
             parameter->type = read_type(child);

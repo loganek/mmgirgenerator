@@ -140,6 +140,10 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
                 if (is_array) c_type += "*";
             }
 
+            if (is_base_pointer(c_type) && parameter->direction == Direction::In)
+            {
+                c_type = "const " + c_type;
+            }
             if (force_conts_string && c_type == "gchar*")
                 c_type = "const-gchar*";
 
@@ -216,6 +220,11 @@ void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const
 
     std::cout << "  (c-name \"" << fnc->c_identifier << "\")" << std::endl;
     std::cout << "  (return-type \"" << get_return_type(fnc->return_value) << "\")" << std::endl;
+
+    if (fnc->c_identifier == "g_io_channel_write_chars")
+    {
+        puts ("");
+    }
 
     print_callable_parameters(fnc, is_method);
 

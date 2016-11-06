@@ -13,6 +13,12 @@ enum class TransferOwnership
     Full
 };
 
+enum class Direction
+{
+    In,
+    Out
+};
+
 enum class EmissionStage
 {
     First,
@@ -94,6 +100,7 @@ struct CallableInfo : public BaseInfo, public IDocumentatable
     {
         std::shared_ptr<TypeInfo> type;
         TransferOwnership transfer_ownership;
+        Direction direction = Direction::In;
         bool is_instance_param = false;
     };
 

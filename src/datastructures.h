@@ -87,6 +87,7 @@ struct CallableInfo : public BaseInfo, public IDocumentatable
     struct ReturnValue : public IDocumentatable
     {
         std::shared_ptr<TypeInfo> type;
+        TransferOwnership transfer_ownership;
     };
 
     struct ParameterInfo : public BaseInfo, public IDocumentatable

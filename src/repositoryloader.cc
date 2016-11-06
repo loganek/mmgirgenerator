@@ -324,6 +324,7 @@ std::shared_ptr<CallableInfo::ReturnValue> RepositoryLoader::load_return_value(c
 
     read_documentation(node, return_value);
 
+    return_value->transfer_ownership = transfer_ownership_from_string(to_element(node)->get_attribute_value("transfer-ownership"));
     return_value->type = read_type(node);
 
     return return_value;

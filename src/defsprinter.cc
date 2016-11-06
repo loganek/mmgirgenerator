@@ -18,80 +18,20 @@ static std::string prepare_c_type(std::string c_type)
     return c_type;
 }
 
-void DefsPrinter::print_enums() const
+void DefsPrinter::print_virtual_method(std::shared_ptr<FunctionInfo> &vmethod, const std::shared_ptr<StructureInfo>& parent) const
 {
-    for (std::shared_ptr<EnumInfo> enum_info : nspace->enumerations)
+    if (!vmethod->is_virtual)
     {
-        if (enum_info->is_bitfield)
-        {
-            std::cout << "(define-flags-extended " << enum_info->name << std::endl;
-        }
-        else
-        {
-            std::cout << "(define-enum-extended " << enum_info->name << std::endl;
-        }
-
-        std::string module = namespace_mapping.find(nspace->name) != namespace_mapping.end() ?
-                    namespace_mapping.at(nspace->name) : nspace->name;
-
-        std::cout << "  (in-module \"" << module << "\")" << std::endl;
-        std::cout << "  (c-name \"" << enum_info->c_type << "\")" << std::endl;
-        std::cout << "  (values" << std::endl;
-
-        for (std::shared_ptr<EnumInfo::MemberInfo> member : enum_info->members)
-        {
-            std::cout << "    '(\"" << member->name << "\" \"" << member->c_identifier << "\" \"" << member->value << "\")" << std::endl;
-        }
-
-        std::cout << "  )" << std::endl;
-        std::cout << ")" << std::endl;
-        std::cout << std::endl;
-    }
-}
-
-void DefsPrinter::print_virtual_methods() const
-{
-    for (std::shared_ptr<ClassInfo> class_info : nspace->classes)
-    {
-        print_virtual_methods(class_info->functions, class_info->c_type);
+        return;
     }
 
-    for (std::shared_ptr<InterfaceInfo> interface_info : nspace->interfaces)
-    {
-        print_virtual_methods(interface_info->functions, interface_info->c_type);
-    }
-}
+    std::cout << "(define-vfunc " << vmethod->name << std::endl;
+    std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
+    std::cout << "  (return-type \"" << prepare_c_type(vmethod->return_value->type->c_type) << "\")" << std::endl;
 
-void DefsPrinter::print_signals() const
-{
-    for (std::shared_ptr<ClassInfo> class_info : nspace->classes)
-    {
-        print_signals(class_info->glib_signals, class_info->c_type);
-    }
+    print_callable_parameters(vmethod);
 
-    for (std::shared_ptr<InterfaceInfo> interface_info : nspace->interfaces)
-    {
-        print_signals(interface_info->glib_signals, interface_info->c_type);
-    }
-}
-
-void DefsPrinter::print_virtual_methods(const std::vector<std::shared_ptr<FunctionInfo>> &functions, const std::string &parent_c_type) const
-{
-    for (std::shared_ptr<FunctionInfo> fnc : functions)
-    {
-        if (!fnc->is_virtual)
-        {
-            continue;
-        }
-
-        std::cout << "(define-vfunc " << fnc->name << std::endl;
-        std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
-        std::cout << "  (return-type \"" << prepare_c_type(fnc->return_value->type->c_type) << "\")" << std::endl;
-
-        print_callable_parameters(fnc);
-
-        std::cout << ")" << std::endl << std::endl;
-    }
+    std::cout << ")" << std::endl << std::endl;
 }
 
 static std::string to_string(EmissionStage when)
@@ -109,20 +49,17 @@ static std::string to_string(EmissionStage when)
     throw std::runtime_error("unexpected emission stage value");
 }
 
-void DefsPrinter::print_signals(const std::vector<std::shared_ptr<SignalInfo>> &signal_objects, const std::string &parent_c_type) const
+void DefsPrinter::print_signal(const std::shared_ptr<SignalInfo> &sgnl, const std::shared_ptr<StructureInfo> &parent) const
 {
-    for (std::shared_ptr<SignalInfo> sgnl : signal_objects)
-    {
-        std::cout << "(define-signal " << sgnl->name << std::endl;
-        std::cout << "  (of-object \"" << parent_c_type << "\")" << std::endl;
-        std::cout << "  (return-type \"" << sgnl->return_value->type->c_type << "\")" << std::endl;
-        std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
+    std::cout << "(define-signal " << sgnl->name << std::endl;
+    std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
+    std::cout << "  (return-type \"" << sgnl->return_value->type->c_type << "\")" << std::endl;
+    std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
 
-        // All signal parameters that are registered as GTK_TYPE_STRING are actually const gchar*.
-        print_callable_parameters(sgnl, true);
+    // All signal parameters that are registered as GTK_TYPE_STRING are actually const gchar*.
+    print_callable_parameters(sgnl, true);
 
-        std::cout << ")" << std::endl << std::endl;
-    }
+    std::cout << ")" << std::endl << std::endl;
 }
 
 std::string DefsPrinter::get_c_type_name(const std::shared_ptr<TypeInfo>& type_info) const
@@ -206,91 +143,32 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
     }
 }
 
-std::string DefsPrinter::get_property_type(const std::shared_ptr<TypeInfo>& type_info) const
+void DefsPrinter::print_property(const std::shared_ptr<PropertyInfo>& property, const std::shared_ptr<StructureInfo>& parent) const
 {
-    // TODO this function have to be re-implemented, if is used in the future.
+    std::string doc = property->documentation;
+    std::replace(doc.begin(), doc.end(), '\n', ' '), doc.end();
+    std::replace(doc.begin(), doc.end(), '"', '\''), doc.end();
 
-    static std::map<std::string, std::string> type_map = {
-        { "boolean", "GParamBoolean" },
-        { "double", "GParamDouble" },
-        { "float", "GParamFloat" },
-        { "GType", "GParamGType" },
-        { "int", "GParamInt" },
-        { "gint64", "GParamInt64" },
-        { "unsigned", "GParamUInt" },
-        { "guint64", "GParamUInt64" },
-        { "unsigned long", "GParamULong" },
-        { "GVariant", "GParamVariant" },
-        { "gchar*", "GParamString" },
+    std::cout << "(define-property " << property->name << std::endl;
+    std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
 
-    };
+    // TODO does the generator use this line?
+    //std::cout << "  (prop-type\"" << get_property_type(property->type) << "\")" << std::endl;
 
-    std::string c_type = get_c_type_name(type_info);
-
-    auto it = type_map.find(c_type);
-    if (it != type_map.end())
+    if (!doc.empty())
     {
-        return it->second;
+        std::cout << "  (docs \"" << doc << "\")" << std::endl;
     }
 
-    /*
-    "GParamUnichar"
-    "GstParamFraction"
-    "GParamEnum"
-    "GParamFlags"
-    "GParamBoxed"
-    "GParamObject
-    */
+    std::cout << "  (readable #" << (property->readable ? 't' : 'f') << ")" << std::endl;
+    std::cout << "  (writable #" << (property->writable ? 't' : 'f') << ")" << std::endl;
+    std::cout << "  (construct-only #" << (property->construct_only ? 't' : 'f') << ")" << std::endl;
 
-    if (c_type.back() == '*')
+    if (property->deprecated)
     {
-        return "GParamPointer";
+        std::cout << "  (deprecated #t)" << std::endl;
     }
-
-    throw std::runtime_error("Don't know how to map property type " + c_type);
-}
-
-void DefsPrinter::print_properties() const
-{
-    for (auto class_info : nspace->classes)
-    {
-        print_properties(class_info->properties, class_info->c_type);
-    }
-    for (auto interface_info : nspace->interfaces)
-    {
-        print_properties(interface_info->properties, interface_info->c_type);
-    }
-}
-
-void DefsPrinter::print_properties(const std::vector<std::shared_ptr<PropertyInfo>>& properties, const std::string& parent_ctype) const
-{
-    for (auto property : properties)
-    {
-        std::string doc = property->documentation;
-        std::replace(doc.begin(), doc.end(), '\n', ' '), doc.end();
-        std::replace(doc.begin(), doc.end(), '"', '\''), doc.end();
-
-        std::cout << "(define-property " << property->name << std::endl;
-        std::cout << "  (of-object \"" << parent_ctype << "\")" << std::endl;
-
-        // TODO does the generator use this line?
-        //std::cout << "  (prop-type\"" << get_property_type(property->type) << "\")" << std::endl;
-
-        if (!doc.empty())
-        {
-            std::cout << "  (docs \"" << doc << "\")" << std::endl;
-        }
-
-        std::cout << "  (readable #" << (property->readable ? 't' : 'f') << ")" << std::endl;
-        std::cout << "  (writable #" << (property->writable ? 't' : 'f') << ")" << std::endl;
-        std::cout << "  (construct-only #" << (property->construct_only ? 't' : 'f') << ")" << std::endl;
-
-        if (property->deprecated)
-        {
-            std::cout << "  (deprecated #t)" << std::endl;
-        }
-        std::cout << ")" << std::endl << std::endl;
-    }
+    std::cout << ")" << std::endl << std::endl;
 }
 
 void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const std::shared_ptr<StructureInfo>& parent) const
@@ -321,6 +199,83 @@ void DefsPrinter::print_function(const std::shared_ptr<FunctionInfo>& fnc, const
     print_callable_parameters(fnc, is_method);
 
     std::cout << ")" << std::endl << std::endl;
+}
+
+void DefsPrinter::print_virtual_methods() const
+{
+    for (auto class_info : nspace->classes)
+    {
+        for (auto vmethod : class_info->functions)
+        {
+            print_virtual_method(vmethod, class_info);
+        }
+    }
+    for (auto interface_info : nspace->interfaces)
+    {
+        for (auto vmethod: interface_info->functions)
+        {
+            print_virtual_method(vmethod, interface_info);
+        }
+    }
+}
+
+void DefsPrinter::print_enums() const
+{
+    for (std::shared_ptr<EnumInfo> enum_info : nspace->enumerations)
+    {
+        std::cout << "(define-" << (enum_info->is_bitfield ? "flags" : "enum") << "-extended " << enum_info->name << std::endl;
+
+        std::string module = namespace_mapping.find(nspace->name) != namespace_mapping.end() ?
+                    namespace_mapping.at(nspace->name) : nspace->name;
+        std::cout << "  (in-module \"" << module << "\")" << std::endl;
+        std::cout << "  (c-name \"" << enum_info->c_type << "\")" << std::endl;
+        std::cout << "  (values" << std::endl;
+
+        for (auto member : enum_info->members)
+        {
+            std::cout << "    '(\"" << member->name << "\" \"" << member->c_identifier << "\" \"" << member->value << "\")" << std::endl;
+        }
+
+        std::cout << "  )" << std::endl;
+        std::cout << ")" << std::endl;
+        std::cout << std::endl;
+    }
+}
+
+void DefsPrinter::print_signals() const
+{
+    for (auto class_info : nspace->classes)
+    {
+        for (auto signal: class_info->glib_signals)
+        {
+            print_signal(signal, class_info);
+        }
+    }
+    for (auto interface_info : nspace->interfaces)
+    {
+        for (auto signal: interface_info->glib_signals)
+        {
+            print_signal(signal, interface_info);
+        }
+    }
+}
+
+void DefsPrinter::print_properties() const
+{
+    for (auto class_info : nspace->classes)
+    {
+        for (auto property: class_info->properties)
+        {
+            print_property(property, class_info);
+        }
+    }
+    for (auto interface_info : nspace->interfaces)
+    {
+        for (auto property: interface_info->properties)
+        {
+            print_property(property, interface_info);
+        }
+    }
 }
 
 void DefsPrinter::print_functions() const

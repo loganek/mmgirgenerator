@@ -47,6 +47,15 @@ struct IDocumentatable
     std::string documentation_deprecated;
 };
 
+struct IVersionable
+{
+    virtual ~IVersionable() {}
+
+    bool is_deprecated = false;
+    std::string deprecated_version;
+    std::string version;
+};
+
 struct TypeInfo : public BaseInfo
 {
     std::string c_type;
@@ -75,14 +84,13 @@ struct ConstantInfo : public BaseInfo, public IDocumentatable
     std::shared_ptr<TypeInfo> type;
 };
 
-struct PropertyInfo : public BaseInfo, public IDocumentatable
+struct PropertyInfo : public BaseInfo, public IDocumentatable, public IVersionable
 {
     std::shared_ptr<TypeInfo> type;
     bool writable = false;
     bool readable = true;
     bool construct_only = false;
     TransferOwnership transfer_ownership;
-    bool deprecated = false;
 };
 
 struct EnumInfo : public BaseInfo, public IDocumentatable
@@ -98,7 +106,7 @@ struct EnumInfo : public BaseInfo, public IDocumentatable
     std::vector<std::shared_ptr<MemberInfo>> members;
 };
 
-struct CallableInfo : public BaseInfo, public IDocumentatable
+struct CallableInfo : public BaseInfo, public IDocumentatable, public IVersionable
 {
     struct ReturnValue : public IDocumentatable
     {
@@ -142,7 +150,7 @@ struct SignalInfo : public CallableInfo
     EmissionStage when;
 };
 
-struct StructureInfo : public BaseInfo, public IDocumentatable
+struct StructureInfo : public BaseInfo, public IDocumentatable, IVersionable
 {
     std::string c_type;
     std::string parent_name;

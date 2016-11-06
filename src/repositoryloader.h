@@ -27,6 +27,7 @@ private:
     std::vector<std::shared_ptr<CallableInfo::ParameterInfo>> load_parameters(const xmlpp::Node *node);
     std::shared_ptr<PropertyInfo> load_property(const xmlpp::Element *element);
 
+    void load_versionable(const xmlpp::Element *element, const std::shared_ptr<IVersionable>& versionable);
     void load_structure(const xmlpp::Element *element, const std::shared_ptr<StructureInfo> &structure);
     void load_callable(const xmlpp::Element *element, const std::shared_ptr<CallableInfo> &callable);
 

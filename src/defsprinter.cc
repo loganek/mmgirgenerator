@@ -179,7 +179,7 @@ void DefsPrinter::print_property(const std::shared_ptr<PropertyInfo>& property, 
     std::cout << "  (writable #" << (property->writable ? 't' : 'f') << ")" << std::endl;
     std::cout << "  (construct-only #" << (property->construct_only ? 't' : 'f') << ")" << std::endl;
 
-    if (property->deprecated)
+    if (property->is_deprecated)
     {
         std::cout << "  (deprecated #t)" << std::endl;
     }

@@ -216,6 +216,13 @@ std::shared_ptr<InterfaceInfo> RepositoryLoader::load_interface(const xmlpp::Ele
     return interface_info;
 }
 
+void RepositoryLoader::load_versionable(const xmlpp::Element *element, const std::shared_ptr<IVersionable>& versionable)
+{
+    versionable->is_deprecated = read_numeric_attribute<bool>(element, "deprecated", false);
+    versionable->deprecated_version = element->get_attribute_value("deprecated-version");
+    versionable->version = element->get_attribute_value("version");
+}
+
 std::shared_ptr<PropertyInfo> RepositoryLoader::load_property(const xmlpp::Element *element)
 {
     auto property_info = std::make_shared<PropertyInfo>();
@@ -223,8 +230,8 @@ std::shared_ptr<PropertyInfo> RepositoryLoader::load_property(const xmlpp::Eleme
     property_info->name = element->get_attribute_value("name");
 
     read_documentation(element, property_info);
+    load_versionable(element, property_info);
 
-    property_info->deprecated = read_numeric_attribute(element, "deprecated", false);
     property_info->writable = read_numeric_attribute(element, "writable", false);
     property_info->readable = read_numeric_attribute(element, "readable", true);
     property_info->construct_only = read_numeric_attribute(element, "construct-only", false);
@@ -241,6 +248,8 @@ void RepositoryLoader::load_callable(const xmlpp::Element *element, const std::s
     // TODO moved-to attribute should probably have precendence here
     callable->name = element->get_attribute_value("name");
     callable->throws = read_numeric_attribute<bool>(element, "throws", false);
+
+    load_versionable(element, callable);
 
     for (const auto& child : element->get_children())
     {
@@ -270,6 +279,8 @@ void RepositoryLoader::load_structure(const xmlpp::Element *element, const std::
 
     structure->parent_name = element->get_attribute_value("parent");
     structure->is_abstract = read_numeric_attribute(element, "abstract", false);
+
+    load_versionable(element, structure);
 
     read_documentation(element, structure);
 

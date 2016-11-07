@@ -20,13 +20,21 @@ static bool is_base_pointer(std::string c_type)
     return base_types.find(c_type) != base_types.end();
 }
 
-static std::string get_return_type(const std::shared_ptr<CallableInfo::ReturnValue>& return_value)
+std::string DefsPrinter::get_return_type(const std::shared_ptr<CallableInfo::ReturnValue>& return_value) const
 {
     std::string c_type = return_value->type->c_type;
-    std::string const_str = "const ";
-    if (return_value->transfer_ownership == TransferOwnership::None && is_base_pointer(c_type) && c_type.find(const_str) != 0)
+
+    if (c_type.empty())
     {
-        c_type = const_str + c_type;
+        c_type = get_c_type_name(return_value->type);
+    }
+    else
+    {
+        std::string const_str = "const ";
+        if (return_value->transfer_ownership == TransferOwnership::None && is_base_pointer(c_type) && c_type.find(const_str) != 0)
+        {
+            c_type = const_str + c_type;
+        }
     }
 
     return prepare_c_type(c_type);
@@ -67,7 +75,7 @@ void DefsPrinter::print_signal(const std::shared_ptr<SignalInfo> &sgnl, const st
 {
     std::cout << "(define-signal " << sgnl->name << std::endl;
     std::cout << "  (of-object \"" << parent->c_type << "\")" << std::endl;
-    std::cout << "  (return-type \"" << sgnl->return_value->type->c_type << "\")" << std::endl;
+    std::cout << "  (return-type \"" << get_return_type(sgnl->return_value) << "\")" << std::endl;
     std::cout << "  (when \"" << to_string(sgnl->when) << "\")" << std::endl;
 
     // All signal parameters that are registered as GTK_TYPE_STRING are actually const gchar*.
@@ -76,13 +84,16 @@ void DefsPrinter::print_signal(const std::shared_ptr<SignalInfo> &sgnl, const st
     std::cout << ")" << std::endl << std::endl;
 }
 
+static bool is_primitive(const std::string &type_name)
+{
+    // TODO update list
+    static std::set<std::string> primitives = {"gdouble", "gint", "int", "double"};
+
+    return primitives.find(type_name) != primitives.end();
+}
+
 std::string DefsPrinter::get_c_type_name(const std::shared_ptr<TypeInfo>& type_info) const
 {
-    if (!type_info->c_type.empty())
-    {
-        return type_info->c_type;
-    }
-
     auto enum_info = nspace_collection->find_enum_by_name(type_info->name, nspace->name);
     if (enum_info)
     {
@@ -107,7 +118,43 @@ std::string DefsPrinter::get_c_type_name(const std::shared_ptr<TypeInfo>& type_i
         return "gchar*";
     }
 
+    if (is_primitive(type_info->name) && type_info->c_type == "gpointer")
+    {
+        return type_info->name + "*";
+    }
+
+    if (!type_info->c_type.empty())
+    {
+        return type_info->c_type;
+    }
+
     throw std::runtime_error("unknown type " + type_info->name); // TODO warning instead of exception
+}
+
+// TODO it should probably be fixed in mm proc
+// since we use there data instead of user_data,
+// so we can have conflicts
+static std::string get_parameter_name(const std::shared_ptr<FunctionInfo::ParameterInfo> &parameter, const std::shared_ptr<CallableInfo> &parent)
+{
+    // TODO move this check one level up?
+    if (!std::dynamic_pointer_cast<SignalInfo>(parent))
+    {
+        return parameter->name;
+    }
+
+    if (parameter->name != "data")
+    {
+        return parameter->name;
+    }
+
+    std::size_t add = 0;
+    auto it = parent->parameters.begin();
+    while (it != parent->parameters.end() && add < parent->parameters.size())
+    {
+        add++;
+        it = std::find_if(parent->parameters.begin(), parent->parameters.end(), [&parameter, &add](auto param) { return param->name == (parameter->name + std::to_string(add)); });
+    }
+    return parameter->name + std::to_string(add);
 }
 
 void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> &callable, bool is_method, bool force_conts_string) const
@@ -147,7 +194,13 @@ void DefsPrinter::print_callable_parameters(const std::shared_ptr<CallableInfo> 
             if (force_conts_string && c_type == "gchar*")
                 c_type = "const-gchar*";
 
-            std::cout << "    '(\"" << prepare_c_type(c_type) << "\" \"" << parameter->name << "\")" << std::endl;
+            if (c_type == "gpointer")
+            {
+                auto tmp_type = get_c_type_name(parameter->type);
+                if (!tmp_type.empty()) c_type = tmp_type;
+            }
+
+            std::cout << "    '(\"" << prepare_c_type(c_type) << "\" \"" << get_parameter_name(parameter, callable) << "\")" << std::endl;
         }
         if (callable->throws)
         {

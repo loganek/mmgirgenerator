@@ -15,6 +15,8 @@ class DefsPrinter
 
     std::string get_c_type_name(const std::shared_ptr<TypeInfo>& type_info) const;
 
+    std::string get_return_type(const std::shared_ptr<CallableInfo::ReturnValue>& return_value) const;
+
     void print_virtual_method(std::shared_ptr<FunctionInfo> &vmethod, const std::shared_ptr<StructureInfo>& parent) const;
     void print_signal(const std::shared_ptr<SignalInfo> &sgnl, const std::shared_ptr<StructureInfo> &parent) const;
     void print_property(const std::shared_ptr<PropertyInfo>& properties, const std::shared_ptr<StructureInfo>& parent_ctype) const;
